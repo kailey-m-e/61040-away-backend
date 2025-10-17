@@ -1,0 +1,227 @@
+import { Collection, Db } from "npm:mongodb";
+import { Empty, ID } from "@utils/types.ts";
+import { freshID } from "@utils/database.ts";
+
+// Collection prefix to ensure namespace separation
+const PREFIX = "Friending" + ".";
+
+// Generic types for the concept's external dependencies
+type User = ID;
+
+/**
+ * State: A set of Users with a set of friends, outgoingRequests friend requests, and incoming friend requests.
+ */
+export interface UserDoc {
+  _id: User;
+  friends: User[];
+  outgoingRequests: User[];
+}
+
+/**
+ * @concept Friending
+ * @purpose To allow users to share special permissions with other users.
+ */
+export default class FriendingConcept {
+  friends: Collection<UserDoc>;
+
+  constructor(private readonly db: Db) {
+    this.friends = this.db.collection(PREFIX + "friends");
+  }
+
+  /**
+   * Action: Requests a new friend.
+   * @requires
+   * @effects
+   */
+  async requestFriend(
+    { user, friend }: { user: User; friend: User },
+  ): Promise<Empty | { error: string }> {
+    // check friend logic
+    if (user === friend) {
+      return { error: `User cannot send friend request to theirself.` };
+    }
+    const alreadyFriend = await this.friends.findOne({
+      _id: user,
+      friends: friend,
+    });
+    const userAlreadyRequested = await this.friends.findOne({
+      _id: user,
+      outgoingRequests: friend,
+    });
+    const friendAlreadyRequested = await this.friends.findOne({
+      _id: friend,
+      outgoingRequests: user,
+    });
+    if (alreadyFriend || userAlreadyRequested || friendAlreadyRequested) {
+      return { error: `Request cannot be made for friend with ID ${friend}.` };
+    }
+
+    // add user/friend if don't exist
+    const userExists = await this.friends.findOne({ _id: user });
+    if (!userExists) {
+      await this.friends.insertOne({
+        _id: user,
+        friends: [],
+        outgoingRequests: [],
+      });
+    }
+    const friendExists = await this.friends.findOne({ _id: friend });
+    if (!friendExists) {
+      await this.friends.insertOne({
+        _id: friend,
+        friends: [],
+        outgoingRequests: [],
+      });
+    }
+
+    // update
+    await this.friends.updateOne({ _id: user }, {
+      $push: { outgoingRequests: friend },
+    });
+
+    return {};
+  }
+
+  /**
+   * Action: Cancels an outgoing friend request.
+   * @requires
+   * @effects
+   */
+  async unrequestFriend(
+    { user, friend }: { user: User; friend: User },
+  ): Promise<Empty | { error: string }> {
+    // check friend logic
+    const outgoingFriendRequest = await this.friends.findOne({
+      _id: user,
+      outgoingRequests: friend,
+    });
+    if (!outgoingFriendRequest) {
+      return {
+        error:
+          `User with ID ${user} hasn't requested friend with ID ${friend}.`,
+      };
+    }
+
+    await this.friends.updateOne({ _id: user }, {
+      $pull: { outgoingRequests: friend },
+    });
+
+    return {};
+  }
+
+  /**
+   * Action: Accepts an incoming friend request.
+   * @requires
+   * @effects
+   */
+  async acceptFriend(
+    { user, friend }: { user: User; friend: User },
+  ): Promise<Empty | { error: string }> {
+    // check friend logic
+    const incomingFriendRequest = await this.friends.findOne({
+      _id: friend,
+      outgoingRequests: user,
+    });
+    if (!incomingFriendRequest) {
+      return {
+        error:
+          `Friend with ID ${friend} hasn't requested user with ID ${user}.`,
+      };
+    }
+
+    await this.friends.updateOne({ _id: friend }, {
+      $pull: { outgoingRequests: user },
+    });
+    await this.friends.updateOne({ _id: user }, { $push: { friends: friend } });
+    await this.friends.updateOne({ _id: friend }, { $push: { friends: user } });
+
+    return {};
+  }
+
+  /**
+   * Action: Rejects an incoming friend request.
+   * @requires
+   * @effects
+   */
+  async rejectFriend(
+    { user, friend }: { user: User; friend: User },
+  ): Promise<Empty | { error: string }> {
+    // check friend logic
+    const incomingFriendRequest = await this.friends.findOne({
+      _id: friend,
+      outgoingRequests: user,
+    });
+    if (!incomingFriendRequest) {
+      return {
+        error:
+          `Friend with ID ${friend} hasn't requested user with ID ${user}.`,
+      };
+    }
+
+    await this.friends.updateOne({ _id: friend }, {
+      $pull: { outgoingRequests: user },
+    });
+
+    return {};
+  }
+
+  /**
+   * Action: Confirms that a given friendship exists.
+   * @requires
+   * @effects
+   */
+  async validateFriendship(
+    { user, friend }: { user: User; friend: User },
+  ): Promise<Empty | { error: string }> {
+    // check friend logic
+    const currFriend = await this.friends.findOne({
+      _id: user,
+      friends: friend,
+    });
+    if (!currFriend) {
+      return {
+        error:
+          `No friendship exists between user with ID ${user} and friend with ID ${friend}.`,
+      };
+    }
+
+    return {};
+  }
+
+  /**
+   * Action: Ends the friendship between two users.
+   * @requires
+   * @effects
+   */
+  async endFriendship(
+    { user, friend }: { user: User; friend: User },
+  ): Promise<Empty | { error: string }> {
+    // check friend logic
+    const currFriend = await this.friends.findOne({
+      _id: user,
+      friends: friend,
+    });
+    if (!currFriend) {
+      return {
+        error:
+          `No friendship exists between user with ID ${user} and friend with ID ${friend}.`,
+      };
+    }
+
+    await this.friends.updateOne({ _id: friend }, { $pull: { friends: user } });
+    await this.friends.updateOne({ _id: user }, { $pull: { friends: friend } });
+
+    return {};
+  }
+
+  /**
+   * Query: Retrieves all users who have friend requested a given user.
+   * @requires
+   * @effects
+   */
+  async _getIncomingRequests(
+    { user }: { user: User },
+  ): Promise<UserDoc[]> {
+    return await this.friends.find({ outgoingRequests: user }).toArray();
+  }
+}

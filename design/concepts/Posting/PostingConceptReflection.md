@@ -1,0 +1,3 @@
+- decided not to include gallery because would get pretty complicated and don't want to worry about working with images yet
+- combined dates into single edit (because easier that way) and added description edit
+- do I need to store the date that a post was created?
