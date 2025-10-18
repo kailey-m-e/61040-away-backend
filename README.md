@@ -25,3 +25,7 @@
     - a spec file: [ConceptName]ConceptSpec.md
     - a design reflection file: [ConceptName]DesignReflection.md
     - an LLM prompting file: [ConceptName]ConceptPrompts.md
+
+## Note on LLM Use
+
+For this assignment, I decided to mostly write the implementations and test cases by hand (in order to make sure I understood the process of creating a backend), and then I asked the LLM to review/critique my work and perform refactoring/supplemental code generation in some instances!
