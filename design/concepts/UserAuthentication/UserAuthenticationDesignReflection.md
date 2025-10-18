@@ -1,0 +1,3 @@
+# UserAuthentication Design Reflection
+
+With the help of the LLM, I refactored my initial UserAuthentication concept from assignment 2 in order to create a secure version that utilized hashing. Starting with an implementation of my original spec, I then prompted the LLM to incorporate hashing, as was advised in a Piazza post. The result was that each user's plaintext password was replaced with the combination of a hashedPassword and a salt, which combined to allow for secure authorization. The LLM was very successful at making this update, and I then updated my spec accordingly to match the new implementation. Other than that, there were no significant issues when developing the UserAuthentication concept.

@@ -1,12 +1,12 @@
 TODO:
 - at end: copy all requires and effects to the actual functions
 - check that all names align between specs and implementations
-- do I need "post exists" in update methods?
 - look below at rubric comments from past assignemnt
 - don't need more queries than I have; not directly querying parts of states? (do I need getters? - look at rubric comments below)
 - what should test output to console look like?
 - ask llm to review work and give suggestions on what can be improved overall
-- add getters as actions
+- should queries be in spec
+- potential for race conditions for friending
 
 questions:
 - don't need getters; just queries?
@@ -55,12 +55,29 @@ moments:
 - passing wish lists instead of users
 - no database of places because too hard to check and not always wanted; like google calendar feature
 
+<!-- a design file explaining changes you made to the concept as specified in Assignment 2 and any other issues that came up (in markdown). -->
+
+<!-- - decided that I need place to have a database on its own and export it to the othre (doesn't matter if exports to postcard or postcard exports to it) because otherwise no way to get past places; can eventually add where creating a place uses an llm call to decide if the places actually exists or looks in some other database idk
+
+- would it be good to have a clear option for wishlist?
+- decided that i want to pass in the user in order to ensure that only the user can update the wishlist
+
+- decided to refactor the states because a wishlist was a weird concept that didn't provide functionality -- now just looking at palces; multiple users can have same place
+- decided to do no ai
+
+- wishlist concept very simplified without AI - but will add back in later; still separate from posting becasue separate feed, simpler, etc. -->
+
+
 
 
 POSTING
 - should I make edit checks more dry??
 - how am I supposed to be overloading the edit func?
 - figure out how to sort posts in order??
+
+- decided not to include gallery because would get pretty complicated and don't want to worry about working with images yet
+- combined dates into single edit (because easier that way) and added description edit
+- do I need to store the date that a post was created?
 
 
 

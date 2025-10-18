@@ -12,11 +12,11 @@ type User = ID;
 type Place = ID;
 
 /**
- * State: A set of Places with a creator, city, region, and country.
+ * State: A set of Places with a user, city, region, and country.
  */
 export interface PlaceDoc {
   _id: Place;
-  creator: User;
+  user: User;
   city: string;
   region: string;
   country: string;
@@ -28,17 +28,16 @@ export interface PlaceDoc {
  */
 export default class WishlistConcept {
   places: Collection<PlaceDoc>;
-  // wishlists: Collection<WishlistDoc>;
 
   constructor(private readonly db: Db) {
     this.places = this.db.collection(PREFIX + "places");
-    // this.wishlists = this.db.collection(PREFIX + "wishlist");
   }
 
   /**
    * Action: Adds a new place for a user.
-   * @requires
-   * @effects
+   * @requires a place doesn't already exist in the set of places
+   * with the given user, city, region, and country
+   * @effects adds and returns a place with the given user, city, region, and country
    */
   async addPlace(
     { user, city, region, country }: {
@@ -48,13 +47,14 @@ export default class WishlistConcept {
       country: string;
     },
   ): Promise<{ place: Place } | { error: string }> {
-    // checks
+    // checks place doesn't already exist for user
     const existingPlace = await this.places.findOne({
-      creator: user,
+      user,
       city,
       region,
       country,
     });
+
     if (existingPlace) {
       return {
         error:
@@ -62,11 +62,12 @@ export default class WishlistConcept {
       };
     }
 
+    // adds place
     const newPlaceId = freshID() as Place;
 
     await this.places.insertOne({
       _id: newPlaceId,
-      creator: user,
+      user,
       city,
       region,
       country,
@@ -77,8 +78,8 @@ export default class WishlistConcept {
 
   /**
    * Action: Removes a place from an existing wishlist.
-   * @requires
-   * @effects
+   * @requires place exists in set of places and user is its creator
+   * @effects removes the place from the set of places
    */
   async removePlace(
     { user, place }: {
@@ -86,28 +87,24 @@ export default class WishlistConcept {
       place: Place;
     },
   ): Promise<Empty | { error: string }> {
-    // checks
-    const currPlace = await this.places.findOne({ _id: place });
+    // checks place already exists for user
+    const currPlace = await this.places.findOne({ _id: place, user: user });
     if (!currPlace) {
-      return { error: `Place not in wishlist for user with ID ${user}.` };
+      return { error: `Place not in user with ID ${user}'s wishlist.` };
     }
 
-    if (currPlace.creator !== user) {
-      return { error: "Cannot remove place from another user's wishlist." };
-    }
-
+    // removes place
     await this.places.deleteOne({ _id: place });
     return {};
   }
 
   /**
-   * Query: Retrieves all places for a given user.
-   * @requires
-   * @effects
+   * Query: Retrieves a user's places.
+   * @effects returns all places for a given user
    */
   async _getPlaces(
     { user }: { user: User },
   ): Promise<PlaceDoc[]> {
-    return await this.places.find({ creator: user }).toArray();
+    return await this.places.find({ user: user }).toArray();
   }
 }

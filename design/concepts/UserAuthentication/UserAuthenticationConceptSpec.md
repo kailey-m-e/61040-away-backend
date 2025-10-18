@@ -2,23 +2,22 @@
 
 **concept** UserAuthentication
 
-**purpose** limits access to registered users
+**purpose** to provide secure user registration and authentication in order to limit access to registered users
 
-**principle** after a user registers with a username and a password, they can authenticate with that same username and password to be handled as the same user each time
+**principle** after a user registers with a username and a password, they can authenticate with the same username and password to be handled as the same user each time
 
 **state**
 
 &nbsp; a set of Users with \
-&nbsp;&nbsp;&nbsp; a username String \
-&nbsp;&nbsp;&nbsp; a password String
+&nbsp;&nbsp;&nbsp; a username string \
+&nbsp;&nbsp;&nbsp; a hashedPassword string \
+&nbsp;&nbsp;&nbsp; a salt string \
 
 **actions**
 
-&nbsp; register(username: String, password: String): (user: User) \
+&nbsp; register(username: string, password: string): (user: User) \
 &nbsp;&nbsp;&nbsp; **requires** username doesn't exist among set of users \
-&nbsp;&nbsp;&nbsp; **effects** creates and returns a new user with given username and password
+&nbsp;&nbsp;&nbsp; **effects** creates and returns a new user with the given username, a hashedPassword derived from the given password, and the unique salt used to derive the hashedPassword
 
-&nbsp; authenticate(username: String, password: String): (user: User) \
-&nbsp;&nbsp;&nbsp; **requires** username matches a user with the given password
-
-<!-- **queries** -->
+&nbsp; authenticate(username: String, password: String) \
+&nbsp;&nbsp;&nbsp; **requires** username matches a user whose password matches the given password after re-hashing with the stored salt

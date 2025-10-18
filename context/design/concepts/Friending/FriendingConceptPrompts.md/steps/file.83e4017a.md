@@ -1,0 +1,439 @@
+---
+timestamp: 'Sat Oct 18 2025 15:28:15 GMT-0400 (Eastern Daylight Time)'
+parent: '[[..\20251018_152815.e70c9fce.md]]'
+content_id: 83e4017aa1fb5e2e4e96d288a1977ae44e8ada2da1bfd8d86a7aa7625a9de32d
+---
+
+# file: src/concepts/Friending/FriendingConcept.test.ts
+
+```typescript
+import { assertEquals, assertNotEquals } from "jsr:@std/assert";
+import { testDb } from "@utils/database.ts";
+import { ID } from "@utils/types.ts";
+import FriendingConcept from "./FriendingConcept.ts";
+
+const userA = "user:Alice" as ID;
+const userB = "user:Bob" as ID;
+const userC = "user:Charlie" as ID;
+
+/**
+ * Test Case 1
+ * Demonstrates operational principle: one user requests another, the other user accepts,
+ * and the friendship is validated; then, the friendship is ended and can no longer be validated
+ */
+Deno.test("Test Case 1 - operational principle", async () => {
+  const [db, client] = await testDb();
+  const friendingConcept = new FriendingConcept(db, client);
+
+  try {
+    const incoming1 = await friendingConcept._getIncomingRequests({
+      user: userB,
+    });
+    assertEquals(incoming1.length, 0, "UserB should have 0 incoming requests.");
+
+    // 1. User requests another
+    const requestFriend = await friendingConcept.requestFriend({
+      user: userA,
+      friend: userB,
+    });
+    assertNotEquals(
+      "error" in requestFriend,
+      true,
+      "Friend request should not fail.",
+    );
+
+    const incoming2 = await friendingConcept._getIncomingRequests({
+      user: userB,
+    });
+    assertEquals(incoming2.length, 1, "UserB should have 1 incoming request.");
+    assertEquals(
+      incoming2[0]._id,
+      userA,
+      "UserB should have incoming request from userA.",
+    );
+
+    // 2. Other user accepts
+    const acceptFriend = await friendingConcept.acceptFriend({
+      user: userB,
+      friend: userA,
+    });
+    assertNotEquals(
+      "error" in acceptFriend,
+      true,
+      "Accepting friend should not fail.",
+    );
+
+    // 3. Friendship is validated
+    const validateFriendship1 = await friendingConcept.validateFriendship({
+      user: userA,
+      friend: userB,
+    });
+    assertNotEquals(
+      "error" in validateFriendship1,
+      true,
+      "Friendship validation should not fail.",
+    );
+    const validateFriendship2 = await friendingConcept.validateFriendship({
+      user: userB,
+      friend: userA,
+    });
+    assertNotEquals(
+      "error" in validateFriendship2,
+      true,
+      "Friendship validation should not fail.",
+    );
+
+    // 4. User ends friendship
+    const endFriendship = await friendingConcept.endFriendship({
+      user: userA,
+      friend: userB,
+    });
+    assertNotEquals(
+      "error" in endFriendship,
+      true,
+      "Ending friendship should not fail.",
+    );
+
+    // 5. Friendship can no longer be validated
+    const validateFriendship3 = await friendingConcept.validateFriendship({
+      user: userA,
+      friend: userB,
+    });
+    assertEquals(
+      "error" in validateFriendship3,
+      true,
+      "Friendship validation should fail.",
+    );
+    const validateFriendship4 = await friendingConcept.validateFriendship({
+      user: userB,
+      friend: userA,
+    });
+    assertEquals(
+      "error" in validateFriendship4,
+      true,
+      "Friendship validation should fail.",
+    );
+  } finally {
+    await client.close();
+  }
+});
+
+/**
+ * Test Case 2
+ * Demonstrates user requests another user, who rejects the request;
+ * friendship is not validated.
+ */
+Deno.test("Test Case 2 - request rejected", async () => {
+  const [db, client] = await testDb();
+  const friendingConcept = new FriendingConcept(db, client);
+
+  try {
+    // 1. User requests another
+    const requestFriend = await friendingConcept.requestFriend({
+      user: userA,
+      friend: userB,
+    });
+    assertNotEquals(
+      "error" in requestFriend,
+      true,
+      "Friend request should not fail.",
+    );
+
+    const incoming = await friendingConcept._getIncomingRequests({
+      user: userB,
+    });
+    assertEquals(incoming.length, 1, "User should have 1 incoming request.");
+    assertEquals(incoming[0]._id, userA, "Incorrect incoming request.");
+
+    // 2. Other user rejects
+    const rejectFriend = await friendingConcept.rejectFriend({
+      user: userB,
+      friend: userA,
+    });
+    assertNotEquals(
+      "error" in rejectFriend,
+      true,
+      "Rejecting friend should not fail.",
+    );
+
+    // 3. Friendship is not validated
+    const validateFriendship = await friendingConcept.validateFriendship({
+      user: userA,
+      friend: userB,
+    });
+    assertEquals(
+      "error" in validateFriendship,
+      true,
+      "Friendship validation should fail.",
+    );
+  } finally {
+    await client.close();
+  }
+});
+
+/**
+ * Test Case 3
+ * Demonstrates user requests, unrequests, and then re-requests another user.
+ */
+Deno.test("Test Case 3 - un and re-requesting", async () => {
+  const [db, client] = await testDb();
+  const friendingConcept = new FriendingConcept(db, client);
+
+  try {
+    // 1. User requests another
+    const requestFriend = await friendingConcept.requestFriend({
+      user: userA,
+      friend: userB,
+    });
+    assertNotEquals(
+      "error" in requestFriend,
+      true,
+      "Friend request should not fail.",
+    );
+
+    // 2. User unrequests other
+    const unrequestFriend = await friendingConcept.unrequestFriend({
+      user: userA,
+      friend: userB,
+    });
+    assertNotEquals(
+      "error" in unrequestFriend,
+      true,
+      "Unrequesting friend should not fail.",
+    );
+
+    // 3. User re-requests other
+    const rerequestFriend = await friendingConcept.requestFriend({
+      user: userA,
+      friend: userB,
+    });
+    assertNotEquals(
+      "error" in rerequestFriend,
+      true,
+      "Friend request should not fail.",
+    );
+  } finally {
+    await client.close();
+  }
+});
+
+/**
+ * Test Case 4
+ * Demonstrates user tries to unrequest friend that was never requested;
+ * user tries to accept and reject friend who didn't request user;
+ * user tries to validate and end friendship that was never created.
+ */
+Deno.test("Test Case 4 - actions with nonexistent friendship", async () => {
+  const [db, client] = await testDb();
+  const friendingConcept = new FriendingConcept(db, client);
+
+  try {
+    // 1. User unrequests non-requested friend
+    const unrequestFriend = await friendingConcept.unrequestFriend({
+      user: userA,
+      friend: userB,
+    });
+    assertEquals(
+      "error" in unrequestFriend,
+      true,
+      "Friend request should fail.",
+    );
+
+    // 2. User accepts friend that didn't request user
+    const acceptFriend = await friendingConcept.acceptFriend({
+      user: userA,
+      friend: userB,
+    });
+    assertEquals(
+      "error" in acceptFriend,
+      true,
+      "Accepting friend should fail.",
+    );
+
+    // 3. User rejects friend that didn't request user
+    const rejectFriend = await friendingConcept.rejectFriend({
+      user: userA,
+      friend: userB,
+    });
+    assertEquals(
+      "error" in rejectFriend,
+      true,
+      "Rejecting friend should fail.",
+    );
+
+    // 4. User validates friendship that doesn't exist
+    const validateFriendship = await friendingConcept.validateFriendship({
+      user: userA,
+      friend: userB,
+    });
+    assertEquals(
+      "error" in validateFriendship,
+      true,
+      "Validating friendship should fail.",
+    );
+
+    // 5. User ends friendship that doesn't exist
+    const endFriendship = await friendingConcept.endFriendship({
+      user: userA,
+      friend: userB,
+    });
+    assertEquals(
+      "error" in endFriendship,
+      true,
+      "Ending friendship should fail.",
+    );
+  } finally {
+    await client.close();
+  }
+});
+
+/**
+ * Test Case 5
+ * Demonstrates user tries to request, accept, or reject, friendship that already exists;
+ * user tries to request back; user tries to request itself.
+ */
+Deno.test("Test Case 5 - actions with already existing friendship", async () => {
+  const [db, client] = await testDb();
+  const friendingConcept = new FriendingConcept(db, client);
+
+  try {
+    // 1. User requests another
+    await friendingConcept.requestFriend({ user: userA, friend: userB });
+
+    // 2. Other user tries to request back
+    const requestFriendBack = await friendingConcept.requestFriend({
+      user: userB,
+      friend: userA,
+    });
+    assertEquals(
+      "error" in requestFriendBack,
+      true,
+      "Requesting friend back should fail.",
+    );
+
+    // 3. Other user accepts
+    await friendingConcept.acceptFriend({ user: userB, friend: userA });
+
+    // 4. Other user tries to request again
+    const requestFriendAgain = await friendingConcept.requestFriend({
+      user: userB,
+      friend: userA,
+    });
+    assertEquals(
+      "error" in requestFriendAgain,
+      true,
+      "Requesting friend again should fail.",
+    );
+
+    // 5. Other user tries to accept
+    const acceptFriend = await friendingConcept.acceptFriend({
+      user: userB,
+      friend: userA,
+    });
+    assertEquals(
+      "error" in acceptFriend,
+      true,
+      "Accepting friendship that exists should fail.",
+    );
+
+    // 6. Other user tries to reject
+    const rejectFriend = await friendingConcept.rejectFriend({
+      user: userB,
+      friend: userA,
+    });
+    assertEquals(
+      "error" in rejectFriend,
+      true,
+      "Rejecting friendship that exists should fail.",
+    );
+
+    // 7. User tries to request itself
+    const requestOneself = await friendingConcept.requestFriend({
+      user: userA,
+      friend: userA,
+    });
+    assertEquals(
+      "error" in requestOneself,
+      true,
+      "User requesting itself should fail.",
+    );
+  } finally {
+    await client.close();
+  }
+});
+
+/**
+ * Test Case 6
+ * Mutliple friendships are created.
+ */
+Deno.test("Test Case 6 - multiple friendships", async () => {
+  const [db, client] = await testDb();
+  const friendingConcept = new FriendingConcept(db, client);
+
+  try {
+    // 1. UserA requests UserB
+    await friendingConcept.requestFriend({ user: userA, friend: userB });
+
+    // 2. UserC requests UserB
+    await friendingConcept.requestFriend({ user: userC, friend: userB });
+
+    const incoming1 = await friendingConcept._getIncomingRequests({
+      user: userB,
+    });
+    assertEquals(incoming1.length, 2, "UserB should have 2 incoming requests.");
+    assertEquals(
+      incoming1[0]._id,
+      userA,
+      "UserB should have incoming request from userA.",
+    );
+    assertEquals(
+      incoming1[1]._id,
+      userC,
+      "UserB should have incoming request from userC.",
+    );
+
+    // 3. UserB accepts UserA
+    await friendingConcept.acceptFriend({ user: userB, friend: userA });
+
+    // 4. UserB accepts UserC
+    await friendingConcept.acceptFriend({ user: userB, friend: userC });
+
+    const incoming2 = await friendingConcept._getIncomingRequests({
+      user: userB,
+    });
+    assertEquals(incoming2.length, 0, "UserB should have 0 incoming requests.");
+
+    // 5. UserA validates friendship with userB
+    const validateAB = await friendingConcept.validateFriendship({
+      user: userA,
+      friend: userB,
+    });
+    assertNotEquals(
+      "error" in validateAB,
+      true,
+      "Validating friendship between userA and userB should not fail.",
+    );
+
+    // 6. UserA validates friendship with userC
+    const validateAC = await friendingConcept.validateFriendship({
+      user: userC,
+      friend: userB,
+    });
+    assertNotEquals(
+      "error" in validateAC,
+      true,
+      "Validating friendship between userB and userC should not fail.",
+    );
+  } finally {
+    await client.close();
+  }
+});
+
+/**
+ * Test Case 6
+ * Concurrency.
+ */
+
+```
+
+\#prompt: Reevaluate with the new updates.

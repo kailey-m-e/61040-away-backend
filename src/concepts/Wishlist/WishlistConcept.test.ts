@@ -1,13 +1,7 @@
-import {
-  assert,
-  assertEquals,
-  assertExists,
-  assertNotEquals,
-} from "jsr:@std/assert";
+import { assertEquals, assertExists, assertNotEquals } from "jsr:@std/assert";
 import { testDb } from "@utils/database.ts";
-import { Empty, ID } from "@utils/types.ts";
+import { ID } from "@utils/types.ts";
 import WishlistConcept from "./WishlistConcept.ts";
-import { freshID } from "@utils/database.ts";
 
 const creatorA = "creator:Alice" as ID;
 const creatorB = "creator:Bob" as ID;
@@ -15,7 +9,7 @@ const nonPlace = "place:nonPlace" as ID;
 
 /**
  * Test Case 1
- * Demonstrates operational principle: user adds and removes places.
+ * Demonstrates operational principle: user adds and then removes places from their wishlist.
  */
 Deno.test("Test Case 1 - operational principle", async () => {
   const [db, client] = await testDb();
@@ -62,6 +56,7 @@ Deno.test("Test Case 1 - operational principle", async () => {
       true,
       "Place addition should not fail.",
     );
+
     const { place: nyc } = makeNyc as { place: ID };
     assertExists(nyc);
 
@@ -97,38 +92,26 @@ Deno.test("Test Case 1 - operational principle", async () => {
 
 /**
  * Test Case 2
- * Demonstrates user tries to remove place that was never added
+ * Demonstrates user tries to remove place that was never added;
+ * user tries to remove another user's place.
  */
-Deno.test("Test Case 2", async () => {
+Deno.test("Test Case 2 - user removes unadded place, another user's place", async () => {
   const [db, client] = await testDb();
   const wishlistConcept = new WishlistConcept(db);
 
   try {
-    // 1. user tries to remove place that was never added
-    const removePlace = await wishlistConcept.removePlace({
+    // 1. user A tries to remove place that was never added
+    const removePlace1 = await wishlistConcept.removePlace({
       user: creatorA,
       place: nonPlace,
     });
     assertEquals(
-      "error" in removePlace,
+      "error" in removePlace1,
       true,
       "Removing nonexistant place should fail.",
     );
-  } finally {
-    await client.close();
-  }
-});
 
-/**
- * Test Case 3
- * Demonstrates user tries to remove another user's place
- */
-Deno.test("Test Case 3", async () => {
-  const [db, client] = await testDb();
-  const wishlistConcept = new WishlistConcept(db);
-
-  try {
-    // 1. user A adds place
+    // 2. user A adds place
     const makeTokyo = await wishlistConcept.addPlace({
       user: creatorA,
       city: "Tokyo",
@@ -138,15 +121,64 @@ Deno.test("Test Case 3", async () => {
 
     const { place: tokyo } = makeTokyo as { place: ID };
 
-    // 2. user B tries to remove place
-    const removePlace = await wishlistConcept.removePlace({
+    // 3. user B tries to remove place
+    const removePlace2 = await wishlistConcept.removePlace({
       user: creatorB,
       place: tokyo,
     });
     assertEquals(
-      "error" in removePlace,
+      "error" in removePlace2,
       true,
       "Removing another user's place should fail.",
+    );
+  } finally {
+    await client.close();
+  }
+});
+
+/**
+ * Test Case 3
+ * Demonstrates user adds duplicate place, another user adds same place.
+ */
+Deno.test("Test Case 2 - duplicate places for same and different user", async () => {
+  const [db, client] = await testDb();
+  const wishlistConcept = new WishlistConcept(db);
+
+  try {
+    // 1. user A adds place
+    await wishlistConcept.addPlace({
+      user: creatorA,
+      city: "Tokyo",
+      region: "Kanto",
+      country: "Japan",
+    });
+
+    // 2. user A adds same place
+    const makeTokyo2 = await wishlistConcept.addPlace({
+      user: creatorA,
+      city: "Tokyo",
+      region: "Kanto",
+      country: "Japan",
+    });
+
+    assertEquals(
+      "error" in makeTokyo2,
+      true,
+      "Adding duplicate place for same user should fail.",
+    );
+
+    // 3. user B adds same place
+    const makeTokyo3 = await wishlistConcept.addPlace({
+      user: creatorB,
+      city: "Tokyo",
+      region: "Kanto",
+      country: "Japan",
+    });
+
+    assertNotEquals(
+      "error" in makeTokyo3,
+      true,
+      "Adding duplicate place for different user shouldn't fail.",
     );
   } finally {
     await client.close();
@@ -157,11 +189,14 @@ Deno.test("Test Case 3", async () => {
  * Test Case 4
  * Demonstrates multiple users add and remove places.
  */
-Deno.test("Test Case 4", async () => {
+Deno.test("Test Case 4 - multiple users", async () => {
   const [db, client] = await testDb();
   const wishlistConcept = new WishlistConcept(db);
 
   try {
+    const places0 = await wishlistConcept._getPlaces({ user: creatorA });
+    assertEquals(places0, [], "User A's wishlist should have 0 places.");
+
     // 1. user A adds place
     await wishlistConcept.addPlace({
       user: creatorA,

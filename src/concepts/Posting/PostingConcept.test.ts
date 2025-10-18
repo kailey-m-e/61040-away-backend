@@ -1,11 +1,6 @@
-import {
-  assert,
-  assertEquals,
-  assertExists,
-  assertNotEquals,
-} from "jsr:@std/assert";
+import { assertEquals, assertExists, assertNotEquals } from "jsr:@std/assert";
 import { testDb } from "@utils/database.ts";
-import { Empty, ID } from "@utils/types.ts";
+import { ID } from "@utils/types.ts";
 import PostingConcept from "./PostingConcept.ts";
 
 const creatorA = "creator:Alice" as ID;
@@ -14,13 +9,16 @@ const nonPost = "post:nonPost" as ID;
 
 /**
  * Test Case 1
- * Demonstrates operational principle: user creates and then edits a post.
+ * Demonstrates operational principle: user creates, edits, and then deletes a post.
  */
 Deno.test("Test Case 1 - operational principle", async () => {
   const [db, client] = await testDb();
   const postingConcept = new PostingConcept(db);
 
   try {
+    const posts0 = await postingConcept._getPosts({ user: creatorA });
+    assertEquals(posts0.length, 0, "The user should have 0 posts.");
+
     // 1. Creator makes post
     const title = "Newport Trip";
     const city = "Newport";
@@ -48,7 +46,7 @@ Deno.test("Test Case 1 - operational principle", async () => {
     const { post } = createPost as { post: ID };
     assertExists(post);
 
-    const posts = await postingConcept._getPosts({ user: creatorA });
+    let posts = await postingConcept._getPosts({ user: creatorA });
     assertEquals(posts.length, 1, "The user should have 1 post.");
 
     // 2. Creator edits post
@@ -63,6 +61,26 @@ Deno.test("Test Case 1 - operational principle", async () => {
       true,
       "Editing title should not fail.",
     );
+    posts = await postingConcept._getPosts({ user: creatorA });
+    assertEquals(
+      posts[0].title,
+      newTitle,
+      "Title not updated.",
+    );
+
+    // 3. Creator deletes post
+    const deletePost = await postingConcept.delete({
+      user: creatorA,
+      post: post,
+    });
+    assertEquals(
+      "error" in deletePost,
+      false,
+      "Deleting post should not fail.",
+    );
+
+    posts = await postingConcept._getPosts({ user: creatorA });
+    assertEquals(posts.length, 0, "The user should have 0 posts.");
   } finally {
     await client.close();
   }
@@ -70,9 +88,9 @@ Deno.test("Test Case 1 - operational principle", async () => {
 
 /**
  * Test Case 2
- * Demonstrates operational principle: user creates, edits, and deletes multiple posts.
+ * Demonstrates user creates, edits, and deletes multiple posts.
  */
-Deno.test("Test Case 2", async () => {
+Deno.test("Test Case 2 - multiple posts with create, edit, delete", async () => {
   const [db, client] = await testDb();
   const postingConcept = new PostingConcept(db);
 
@@ -107,17 +125,31 @@ Deno.test("Test Case 2", async () => {
     assertEquals(posts.length, 2, "The user should have 2 posts.");
 
     // 2. Creator edits post #2
+    const newStart = new Date(2025, 7, 5);
+    const newEnd = new Date(2025, 7, 7);
     const editDates = await postingConcept.editDates({
       user: creatorA,
       post: post2,
-      start: new Date(2025, 9, 5),
-      end: new Date(2025, 9, 7),
+      start: newStart,
+      end: newEnd,
     });
     assertNotEquals(
       "error" in editDates,
       true,
       "Editing dates should not fail.",
     );
+    posts = await postingConcept._getPosts({ user: creatorA });
+    assertEquals(
+      posts.find((p) => p._id === post2)!.start,
+      newStart,
+      "Start date not updated.",
+    );
+    assertEquals(
+      posts.find((p) => p._id === post2)!.end,
+      newEnd,
+      "End date not updated.",
+    );
+
     const editDescription = await postingConcept.editDescription({
       user: creatorA,
       post: post2,
@@ -127,6 +159,12 @@ Deno.test("Test Case 2", async () => {
       "error" in editDescription,
       true,
       "Editing description should not fail.",
+    );
+    posts = await postingConcept._getPosts({ user: creatorA });
+    assertEquals(
+      posts.find((p) => p._id === post2)!.description,
+      "Beautiful weekend wedding in Virginia!",
+      "Desription not updated.",
     );
 
     // 3. Creator deletes post #2
@@ -172,6 +210,23 @@ Deno.test("Test Case 2", async () => {
       true,
       "Editing place should not fail.",
     );
+    posts = await postingConcept._getPosts({ user: creatorA });
+    const updatedPost = posts.find((p) => p._id === post3)!;
+    assertEquals(
+      updatedPost.city,
+      "New York",
+      "City not updated.",
+    );
+    assertEquals(
+      updatedPost.region,
+      "New York",
+      "Region not updated.",
+    );
+    assertEquals(
+      updatedPost.country,
+      "United States",
+      "Country not updated.",
+    );
 
     // 5. Creator deletes post #1
     const deletePost1 = await postingConcept.delete({
@@ -195,13 +250,13 @@ Deno.test("Test Case 2", async () => {
  * Test Case 3
  * Demonstrates user tries to edit and delete post that they didn't create.
  */
-Deno.test("Test Case 3", async () => {
+Deno.test("Test Case 3 - edit/delete another user's post", async () => {
   const [db, client] = await testDb();
   const postingConcept = new PostingConcept(db);
 
   try {
     // 1. CreatorA makes post
-    await postingConcept.create({
+    const makePost = await postingConcept.create({
       creator: creatorA,
       title: "Newport Trip",
       city: "Newport",
@@ -212,11 +267,13 @@ Deno.test("Test Case 3", async () => {
       description: "Class of 2027 trip to Newport, RI!",
     });
 
+    const { post: post1 } = makePost as { post: ID };
+
     // 2. CreatorB tries to edit that post
     const newTitle = "Rhode Island Trip";
     const editTitle = await postingConcept.editTitle({
       user: creatorB,
-      post: nonPost,
+      post: post1,
       title: newTitle,
     });
     assertEquals(
@@ -228,7 +285,7 @@ Deno.test("Test Case 3", async () => {
     // 3. CreatorB tries to delete that post
     const deletePost = await postingConcept.delete({
       user: creatorB,
-      post: nonPost,
+      post: post1,
     });
     assertEquals(
       "error" in deletePost!,
@@ -244,7 +301,7 @@ Deno.test("Test Case 3", async () => {
  * Test Case 4
  * Demonstrates user tries to edit and delete post that doesn't exist.
  */
-Deno.test("Test Case 4", async () => {
+Deno.test("Test Case 4 - edit/delete nonexistent post", async () => {
   const [db, client] = await testDb();
   const postingConcept = new PostingConcept(db);
 
@@ -281,39 +338,102 @@ Deno.test("Test Case 4", async () => {
  * Test Case 5
  * Demonstrates multiple users make posts.
  */
-Deno.test("Test Case 4", async () => {
+Deno.test("Test Case 5 - multiple users", async () => {
   const [db, client] = await testDb();
   const postingConcept = new PostingConcept(db);
 
-  // 1. CreatorA makes post
-  const createPost1 = await postingConcept.create({
-    creator: creatorA,
-    title: "Newport Trip",
-    city: "Newport",
-    region: "Rhode Island",
-    country: "United States",
-    start: new Date(2025, 9, 14),
-    end: new Date(2025, 9, 14),
-    description: "Class of 2027 trip to Newport, RI!",
-  });
-  const { post: post1 } = createPost1 as { post: ID };
+  try {
+    // 1. CreatorA makes post
+    await postingConcept.create({
+      creator: creatorA,
+      title: "Newport Trip",
+      city: "Newport",
+      region: "Rhode Island",
+      country: "United States",
+      start: new Date(2025, 9, 14),
+      end: new Date(2025, 9, 14),
+      description: "Class of 2027 trip to Newport, RI!",
+    });
 
-  // 2. CreatorB makes post
-  const createPost2 = await postingConcept.create({
-    creator: creatorB,
-    title: "Virigina Wedding",
-    city: "Charlottlesville",
-    region: "Virginia",
-    country: "United States",
-    start: new Date(2025, 9, 5),
-    end: new Date(2025, 9, 6),
-    description: "Weekend wedding in Virginia!",
-  });
-  const { post: post2 } = createPost2 as { post: ID };
+    // 2. CreatorA makes post
+    await postingConcept.create({
+      creator: creatorA,
+      title: "Weekend Vacation",
+      city: "New York",
+      region: "New York",
+      country: "United States",
+      start: new Date(2025, 5, 12),
+      end: new Date(2025, 5, 14),
+      description: "Fun escape to NYC!",
+    });
 
-  let postA = await postingConcept._getPosts({ user: creatorA });
-  assertEquals(postA.length, 1, "User A should have 1 post.");
+    // 2. CreatorB makes post
+    await postingConcept.create({
+      creator: creatorB,
+      title: "Virigina Wedding",
+      city: "Charlottlesville",
+      region: "Virginia",
+      country: "United States",
+      start: new Date(2025, 9, 5),
+      end: new Date(2025, 9, 6),
+      description: "Weekend wedding in Virginia!",
+    });
 
-  let postB = await postingConcept._getPosts({ user: creatorB });
-  assertEquals(postB.length, 1, "User B should have 1 post.");
+    const postsA = await postingConcept._getPosts({ user: creatorA });
+    assertEquals(postsA.length, 2, "User A should have 2 posts.");
+
+    const postsB = await postingConcept._getPosts({ user: creatorB });
+    assertEquals(postsB.length, 1, "User B should have 1 post.");
+  } finally {
+    await client.close();
+  }
+});
+
+/**
+ * Test Case 6
+ * Demonstrates user tries to make posts with invalid dates.
+ */
+Deno.test("Test Case 6 - posts invalid dates", async () => {
+  const [db, client] = await testDb();
+  const postingConcept = new PostingConcept(db);
+
+  try {
+    // 1. user makes post with future dates
+    const makePost1 = await postingConcept.create({
+      creator: creatorA,
+      title: "Newport Trip",
+      city: "Newport",
+      region: "Rhode Island",
+      country: "United States",
+      start: new Date(2026, 9, 14),
+      end: new Date(2026, 9, 14),
+      description: "Class of 2027 trip to Newport, RI!",
+    });
+
+    assertEquals(
+      "error" in makePost1,
+      true,
+      "Post with future dates should fail.",
+    );
+
+    // 1. user makes post with end date before start
+    const makePost2 = await postingConcept.create({
+      creator: creatorA,
+      title: "Newport Trip",
+      city: "Newport",
+      region: "Rhode Island",
+      country: "United States",
+      start: new Date(2025, 9, 14),
+      end: new Date(2025, 8, 14),
+      description: "Class of 2027 trip to Newport, RI!",
+    });
+
+    assertEquals(
+      "error" in makePost2,
+      true,
+      "Post with end date before start date should fail.",
+    );
+  } finally {
+    await client.close();
+  }
 });
