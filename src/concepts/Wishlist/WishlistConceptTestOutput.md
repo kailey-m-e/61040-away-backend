@@ -2,7 +2,7 @@
 
 running 5 tests from ./src/concepts/UserAuthentication/UserAuthenticationConcept.test.ts
 
-Test Case 1 - operational principle ... ok (708ms)
+Test Case 1 - operational principle: user adds and then removes places from their wishlist ... ok (825ms)
 
 Test Case 2 - incorrect password ... ok (707ms)
 

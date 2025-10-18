@@ -10,7 +10,7 @@
 
 &nbsp; a users set of Users with \
 &nbsp;&nbsp;&nbsp; a friends set of Users \
-&nbsp;&nbsp;&nbsp; an outgoingRequests set of Users \
+&nbsp;&nbsp;&nbsp; an outgoingRequests set of Users
 
 **actions**
 

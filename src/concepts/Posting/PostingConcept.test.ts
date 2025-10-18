@@ -11,7 +11,7 @@ const nonPost = "post:nonPost" as ID;
  * Test Case 1
  * Demonstrates operational principle: user creates, edits, and then deletes a post.
  */
-Deno.test("Test Case 1 - operational principle", async () => {
+Deno.test("Test Case 1 - operational principle: user creates, edits, and then deletes a post", async () => {
   const [db, client] = await testDb();
   const postingConcept = new PostingConcept(db);
 

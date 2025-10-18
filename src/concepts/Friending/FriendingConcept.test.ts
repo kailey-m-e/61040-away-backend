@@ -12,7 +12,7 @@ const userC = "user:Charlie" as ID;
  * Demonstrates operational principle: one user requests another, the other user accepts,
  * and the friendship is validated; then, the friendship is ended and can no longer be validated
  */
-Deno.test("Test Case 1 - operational principle", async () => {
+Deno.test("Test Case 1 - operational principle: user requests, friend accepts, friendship validated; ends, then not validated", async () => {
   const [db, client] = await testDb();
   const friendingConcept = new FriendingConcept(db, client);
 

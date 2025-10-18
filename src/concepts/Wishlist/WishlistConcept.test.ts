@@ -11,7 +11,7 @@ const nonPlace = "place:nonPlace" as ID;
  * Test Case 1
  * Demonstrates operational principle: user adds and then removes places from their wishlist.
  */
-Deno.test("Test Case 1 - operational principle", async () => {
+Deno.test("Test Case 1 - operational principle: user adds and then removes places from their wishlist", async () => {
   const [db, client] = await testDb();
   const wishlistConcept = new WishlistConcept(db);
 

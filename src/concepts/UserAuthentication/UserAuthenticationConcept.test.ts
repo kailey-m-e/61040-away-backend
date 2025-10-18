@@ -7,7 +7,7 @@ import UserAuthenticationConcept from "./UserAuthenticationConcept.ts";
  * Test Case 1
  * Demonstrates operational principle: user registers and then authenticates.
  */
-Deno.test("Test Case 1 - operational principle", async () => {
+Deno.test("Test Case 1 - operational principle: user registers and then authenticates", async () => {
   const [db, client] = await testDb();
   const userAuthenticationConcept = new UserAuthenticationConcept(db);
 

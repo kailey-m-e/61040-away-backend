@@ -2,7 +2,7 @@
 
 running 7 tests from ./src/concepts/Friending/FriendingConcept.test.ts
 
-Test Case 1 - operational principle ... ok (863ms)
+Test Case 1 - operational principle: user creates, edits, and then deletes a post ... ok (647ms)
 
 Test Case 2 - request rejected ... ok (606ms)
 

@@ -2,7 +2,7 @@
 
 running 7 tests from ./src/concepts/Friending/FriendingConcept.test.ts
 
-Test Case 1 - operational principle ... ok (863ms)
+Test Case 1 - operational principle: user requests, friend accepts, friendship validated; ends, then not validated ... ok (978ms)
 
 Test Case 2 - request rejected ... ok (606ms)
 

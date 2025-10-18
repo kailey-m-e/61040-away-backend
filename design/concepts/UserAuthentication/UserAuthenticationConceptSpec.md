@@ -11,7 +11,7 @@
 &nbsp; a set of Users with \
 &nbsp;&nbsp;&nbsp; a username string \
 &nbsp;&nbsp;&nbsp; a hashedPassword string \
-&nbsp;&nbsp;&nbsp; a salt string \
+&nbsp;&nbsp;&nbsp; a salt string
 
 **actions**
 
