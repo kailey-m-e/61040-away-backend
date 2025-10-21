@@ -6,6 +6,6 @@ The following is an explanation of how concepts are implemented, for the purpose
 
 [@implementing-concepts](../background/implementing-concepts.md)
 
-# prompt: 
+# prompt:
 
 Now, analyze the following Concept Implementation and generate the API documentation based on these instructions.

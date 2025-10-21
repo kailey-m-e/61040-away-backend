@@ -39,5 +39,11 @@
 
 **queries**
 
-&nbsp; _getIncoming(user: User): (users set of Users) \
+&nbsp; _getIncomingRequests(user: User): (users set of Users) \
 &nbsp;&nbsp;&nbsp; **effects** returns all users with given user in their outgoingRequests
+
+&nbsp; _getOutgoingRequests(user: User): (users set of Users) \
+&nbsp;&nbsp;&nbsp; **effects** returns all friends in given user's outgoingRequests
+
+&nbsp; _getFriends(user: User): (users set of Users) \
+&nbsp;&nbsp;&nbsp; **effects** returns all friends in given user's friends

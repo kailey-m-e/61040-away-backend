@@ -21,7 +21,7 @@ const CONCEPTS_DIR = "src/concepts";
  * Main server function to initialize DB, load concepts, and start the server.
  */
 async function main() {
-  const [db] = await getDb();
+  const [db, client] = await getDb();
   const app = new Hono();
 
   app.get("/", (c) => c.text("Concept Server is running."));
@@ -56,7 +56,12 @@ async function main() {
         continue;
       }
 
-      const instance = new ConceptClass(db);
+      let instance;
+      if (ConceptClass.name === "FriendingConcept") {
+        instance = new ConceptClass(db, client);
+      } else {
+        instance = new ConceptClass(db);
+      }
       const conceptApiName = conceptName;
       console.log(
         `- Registering concept: ${conceptName} at ${BASE_URL}/${conceptApiName}`,
@@ -73,17 +78,44 @@ async function main() {
         const actionName = methodName;
         const route = `${BASE_URL}/${conceptApiName}/${actionName}`;
 
-        app.post(route, async (c) => {
-          try {
-            const body = await c.req.json().catch(() => ({})); // Handle empty body
-            const result = await instance[methodName](body);
-            return c.json(result);
-          } catch (e) {
-            console.error(`Error in ${conceptName}.${methodName}:`, e);
-            return c.json({ error: "An internal server error occurred." }, 500);
-          }
-        });
-        console.log(`  - Endpoint: POST ${route}`);
+        // Determine if this is a query (GET) or action (POST)
+        const isQuery = methodName.startsWith("get") ||
+          methodName.startsWith("_get");
+
+        if (isQuery) {
+          // Register as GET endpoint for queries
+          app.get(route, async (c) => {
+            try {
+              // For GET requests, read query parameters
+              const params = c.req.query();
+              const result = await instance[methodName](params);
+              return c.json(result);
+            } catch (e) {
+              console.error(`Error in ${conceptName}.${methodName}:`, e);
+              return c.json(
+                { error: "An internal server error occurred." },
+                500,
+              );
+            }
+          });
+          console.log(`  - Endpoint: GET ${route}`);
+        } else {
+          // Register as POST endpoint for actions
+          app.post(route, async (c) => {
+            try {
+              const body = await c.req.json().catch(() => ({})); // Handle empty body
+              const result = await instance[methodName](body);
+              return c.json(result);
+            } catch (e) {
+              console.error(`Error in ${conceptName}.${methodName}:`, e);
+              return c.json(
+                { error: "An internal server error occurred." },
+                500,
+              );
+            }
+          });
+          console.log(`  - Endpoint: POST ${route}`);
+        }
       }
     } catch (e) {
       console.error(
