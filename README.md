@@ -1,7 +1,5 @@
 # Away Backend
 
-**6.104 Assignment 4a: Backend Concept Coding**
-
 ## Overview
 
 **Away** is a web application for users to document and share their past trips and future travel aspirations.
@@ -21,9 +19,10 @@
     - a test script console output file: [ConceptName]TestOutput.md
 - **design**:
   - DesignRelection.md - design reflection & interesting moments
+  - 4BDesignSummary.md - an updated design summary file (4b)
   - **/concepts**: contains a folder for each concept with:
     - a spec file: [ConceptName]ConceptSpec.md
-    - a design reflection file: [ConceptName]DesignReflection.md
+    - a design reflection file (4a): [ConceptName]DesignReflection.md
     - an LLM prompting file: [ConceptName]ConceptPrompts.md
 
 ## Note on LLM Use

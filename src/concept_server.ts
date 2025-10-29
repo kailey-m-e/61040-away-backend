@@ -78,44 +78,21 @@ async function main() {
         const actionName = methodName;
         const route = `${BASE_URL}/${conceptApiName}/${actionName}`;
 
-        // Determine if this is a query (GET) or action (POST)
-        const isQuery = methodName.startsWith("get") ||
-          methodName.startsWith("_get");
-
-        if (isQuery) {
-          // Register as GET endpoint for queries
-          app.get(route, async (c) => {
-            try {
-              // For GET requests, read query parameters
-              const params = c.req.query();
-              const result = await instance[methodName](params);
-              return c.json(result);
-            } catch (e) {
-              console.error(`Error in ${conceptName}.${methodName}:`, e);
-              return c.json(
-                { error: "An internal server error occurred." },
-                500,
-              );
-            }
-          });
-          console.log(`  - Endpoint: GET ${route}`);
-        } else {
-          // Register as POST endpoint for actions
-          app.post(route, async (c) => {
-            try {
-              const body = await c.req.json().catch(() => ({})); // Handle empty body
-              const result = await instance[methodName](body);
-              return c.json(result);
-            } catch (e) {
-              console.error(`Error in ${conceptName}.${methodName}:`, e);
-              return c.json(
-                { error: "An internal server error occurred." },
-                500,
-              );
-            }
-          });
-          console.log(`  - Endpoint: POST ${route}`);
-        }
+        // Register as POST endpoint for actions
+        app.post(route, async (c) => {
+          try {
+            const body = await c.req.json().catch(() => ({})); // Handle empty body
+            const result = await instance[methodName](body);
+            return c.json(result);
+          } catch (e) {
+            console.error(`Error in ${conceptName}.${methodName}:`, e);
+            return c.json(
+              { error: "An internal server error occurred." },
+              500,
+            );
+          }
+        });
+        console.log(`  - Endpoint: POST ${route}`);
       }
     } catch (e) {
       console.error(

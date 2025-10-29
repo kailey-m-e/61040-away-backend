@@ -43,6 +43,16 @@ Deno.test("Test Case 1 - operational principle: user requests, friend accepts, f
       "UserB should have incoming request from userA.",
     );
 
+    const outgoing2 = await friendingConcept._getOutgoingRequests({
+      user: userA,
+    });
+    assertEquals(outgoing2.length, 1, "UserA should have 1 outgoing request.");
+    assertEquals(
+      outgoing2[0],
+      userB,
+      "UserA should have outgoing request for userB.",
+    );
+
     // 2. Other user accepts
     const acceptFriend = await friendingConcept.acceptFriend({
       user: userB,
@@ -72,6 +82,26 @@ Deno.test("Test Case 1 - operational principle: user requests, friend accepts, f
       "error" in validateFriendship2,
       true,
       "Friendship validation should not fail.",
+    );
+
+    const friendsA = await friendingConcept._getFriends({
+      user: userA,
+    });
+    assertEquals(friendsA.length, 1, "UserA should have 1 friend.");
+    assertEquals(
+      friendsA[0],
+      userB,
+      "UserA should be friends with userB.",
+    );
+
+    const friendsB = await friendingConcept._getFriends({
+      user: userB,
+    });
+    assertEquals(friendsB.length, 1, "UserB should have 1 friend.");
+    assertEquals(
+      friendsB[0],
+      userA,
+      "UserB should be friends with userA.",
     );
 
     // 4. User ends friendship

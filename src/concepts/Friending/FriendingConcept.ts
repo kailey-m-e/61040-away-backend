@@ -307,9 +307,6 @@ export default class FriendingConcept {
   ): Promise<ID[]> {
     const currUser = await this.users.findOne({ _id: user });
     return currUser!.outgoingRequests;
-    // const outgoingRequests = await this.users.findOne({ _id: outgoingIDs })
-    //   .toArray();
-    // return outgoingRequests;
   }
 
   /**
@@ -321,9 +318,5 @@ export default class FriendingConcept {
   ): Promise<ID[]> {
     const currUser = await this.users.findOne({ _id: user });
     return currUser!.friends;
-    // const friendIDs = currUser!.friends;
-    // const friends = await this.users.find({ _id: friendIDs })
-    //   .toArray();
-    // return friends;
   }
 }
