@@ -196,6 +196,7 @@ export function startRequestingServer(
     "/*",
     cors({
       origin: REQUESTING_ALLOWED_DOMAIN,
+      credentials: true,
     }),
   );
 
