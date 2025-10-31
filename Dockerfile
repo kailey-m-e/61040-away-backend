@@ -1,7 +1,7 @@
+# Use the official Deno image. Build steps need root to populate Deno's cache
+# and npm registry directories; we'll switch to the non-root 'deno' user after
+# the build is complete.
 FROM denoland/deno:2.5.5
-
-# It's good practice to specify the user. Deno's image provides a non-root 'deno' user.
-USER deno
 
 # Set the working directory inside the container
 WORKDIR /app
@@ -15,15 +15,21 @@ EXPOSE 10000
 # This grants the necessary write permissions for the build step.
 COPY --chown=deno:deno . .
 
-# Run the custom build step defined in deno.json.
-# This step writes to src/concepts/concepts.ts and now has permission to do so.
+# Run the custom build step defined in deno.json as root so Deno can write to
+# its cache (/deno-dir) and populate the npm registry cache. This avoids
+# permission issues that can leave incomplete cache entries (which cause
+# errors like "package.json did not exist").
 RUN deno task build
 
-# Cache the main module and all its dependencies.
-# This ensures faster startup times for the container as modules are pre-compiled.
+# Cache the main module and all dependencies.
 RUN deno cache src/main.ts
 
-# Specify the command to run when the container starts.
-# Using 'deno task start' is the best practice here, as it encapsulates
-# the full run command and necessary permissions from deno.json.
+# Ensure the Deno cache and application files are owned by the non-root 'deno'
+# user before switching to it. This lets the runtime run without root.
+RUN chown -R deno:deno /deno-dir /app || true
+
+# Now drop privileges for the runtime.
+USER deno
+
+# Start the app using the task defined in deno.json
 CMD ["deno", "task", "start"]
