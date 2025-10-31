@@ -1,4 +1,5 @@
 import { Hono } from "jsr:@hono/hono";
+import { cors } from "jsr:@hono/hono/cors";
 import { Collection, Db } from "npm:mongodb";
 import { freshID } from "@utils/database.ts";
 import { ID } from "@utils/types.ts";
@@ -191,46 +192,13 @@ export function startRequestingServer(
     throw new Error("Requesting concept missing or broken.");
   }
   const app = new Hono();
-
-  // Custom CORS middleware: ensure Access-Control-Allow-Origin is present and
-  // set Access-Control-Allow-Credentials when appropriate. Supports a single
-  // origin string or a comma-separated list via REQUESTING_ALLOWED_DOMAIN.
-  app.use("/*", async (c, next) => {
-    const origin = c.req.header("origin") ?? "";
-    const allowed = (REQUESTING_ALLOWED_DOMAIN ?? "*").trim();
-
-    let allowedOrigin: string | null = null;
-    if (allowed === "*") {
-      // Reflect the request origin when wildcard is configured. This allows
-      // credentialed requests (cookies) which cannot be used with '*'.
-      allowedOrigin = origin || "*";
-    } else if (allowed.includes(",")) {
-      const list = allowed.split(",").map((s) => s.trim());
-      if (origin && list.includes(origin)) allowedOrigin = origin;
-    } else if (origin && origin === allowed) {
-      allowedOrigin = origin;
-    }
-
-    const headers: Record<string, string> = {};
-    if (allowedOrigin) {
-      headers["Access-Control-Allow-Origin"] = allowedOrigin;
-      headers["Access-Control-Allow-Credentials"] = "true";
-      headers["Access-Control-Allow-Methods"] =
-        "GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS";
-      headers["Access-Control-Allow-Headers"] =
-        "Content-Type,Authorization,Accept,X-Requested-With";
-    }
-
-    if (c.req.method === "OPTIONS") {
-      return new Response(null, { status: 204, headers });
-    }
-
-    for (const [k, v] of Object.entries(headers)) {
-      c.header(k, v);
-    }
-
-    await next();
-  });
+  app.use(
+    "/*",
+    cors({
+      origin: REQUESTING_ALLOWED_DOMAIN,
+      credentials: true,
+    }),
+  );
 
   /**
    * PASSTHROUGH ROUTES
