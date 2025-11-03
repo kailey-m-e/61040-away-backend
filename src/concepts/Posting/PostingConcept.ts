@@ -251,8 +251,21 @@ export default class PostingConcept {
    */
   async _getPosts(
     { user }: { user: User },
-  ): Promise<PostDoc[]> {
-    return await this.posts.find({ creator: user }).sort({ start: -1 })
+  ): Promise<{ post: Post }[]> {
+    const posts = await this.posts.find({ creator: user }).sort({ start: -1 })
       .toArray();
+    return posts.map((p) => ({ post: p._id }));
+  }
+
+  /**
+   * Query: Retrieves the post for a given ID.
+   * @requires exists post with the given ID
+   * @effects returns the post with the given ID
+   */
+  async _getPostById(
+    { _id }: { _id: ID },
+  ): Promise<{ postData: PostDoc }[]> {
+    const post = await this.posts.find({ _id }).toArray();
+    return post.map((p) => ({ postData: p }));
   }
 }

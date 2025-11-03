@@ -25,12 +25,16 @@
  */
 
 export const inclusions: Record<string, string> = {
-  // Feel free to delete these example inclusions
-  "/api/LikertSurvey/_getSurveyQuestions": "this is a public query",
-  "/api/LikertSurvey/_getSurveyResponses": "responses are public",
-  "/api/LikertSurvey/_getRespondentAnswers": "answers are visible",
-  "/api/LikertSurvey/submitResponse": "allow anyone to submit response",
-  "/api/LikertSurvey/updateResponse": "allow anyone to update their response",
+  // UserAuthentication - public authentication actions
+  "/api/UserAuthentication/register": "public registration",
+  "/api/UserAuthentication/hashPassword": "public registration",
+  "/api/UserAuthentication/_getUserByUsername":
+    "can publicly lookup users by username",
+  "/api/Posting/_getPostById": "can publicly lookup posts by ID",
+  "/api/Wishlist/_getPlaceById": "can publicly lookup places by ID",
+  // "/api/UserAuthentication/authenticate": "public login",
+  // "/api/UserAuthentication/logout": "public logout",
+  // "/api/UserAuthentication/_getSessionUser": "check current session",
 };
 
 /**
@@ -44,7 +48,39 @@ export const inclusions: Record<string, string> = {
  */
 
 export const exclusions: Array<string> = [
-  // Feel free to delete these example exclusions
-  "/api/LikertSurvey/createSurvey",
-  "/api/LikertSurvey/addQuestion",
+  // user authentication
+  "/api/UserAuthentication/authenticate",
+  "/api/UserAuthentication/logout",
+  "/api/UserAuthentication/_getSessionUser",
+
+  // sessioning
+  "/api/Sessioning/create",
+  "/api/Sessioning/delete",
+  "/api/Sessioning/_getUser",
+
+  // posting
+  "/api/Posting/create",
+  "/api/Posting/editTitle",
+  "/api/Posting/editPlace",
+  "/api/Posting/editDates",
+  "/api/Posting/editDescription",
+  "/api/Posting/delete",
+  "/api/Posting/_getPosts",
+
+  // wishlist
+  "/api/Wishlist/addPlace",
+  "/api/Wishlist/removePlace",
+  "/api/Wishlist/_getPlaces",
+
+  // friending
+  "/api/Friending/_runInTransaction",
+  "/api/Friending/requestFriend",
+  "/api/Friending/unrequestFriend",
+  "/api/Friending/acceptFriend",
+  "/api/Friending/rejectFriend",
+  "/api/Friending/validateFriendship",
+  "/api/Friending/endFriendship",
+  "/api/Friending/_getIncomingRequests",
+  "/api/Friending/_getOutgoingRequests",
+  "/api/Friending/_getFriends",
 ];

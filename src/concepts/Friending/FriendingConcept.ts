@@ -224,28 +224,28 @@ export default class FriendingConcept {
     return {};
   }
 
-  /**
-   * Action: Confirms that a given friendship exists.
-   * @requires friend exists in user's set of friends
-   */
-  async validateFriendship(
-    { user, friend }: { user: User; friend: User },
-  ): Promise<Empty | { error: string }> {
-    // check if friend is user's friend
-    const currFriend = await this.users.findOne({
-      _id: user,
-      friends: friend,
-    });
-    if (!currFriend) {
-      return {
-        error:
-          `No friendship exists between user with ID ${user} and friend with ID ${friend}.`,
-      };
-    }
+  // /**
+  //  * Action: Confirms that a given friendship exists.
+  //  * @requires friend exists in user's set of friends
+  //  */
+  // async validateFriendship(
+  //   { user, friend }: { user: User; friend: User },
+  // ): Promise<Empty | { error: string }> {
+  //   // check if friend is user's friend
+  //   const currFriend = await this.users.findOne({
+  //     _id: user,
+  //     friends: friend,
+  //   });
+  //   if (!currFriend) {
+  //     return {
+  //       error:
+  //         `No friendship exists between user with ID ${user} and friend with ID ${friend}.`,
+  //     };
+  //   }
 
-    // friendship
-    return {};
-  }
+  //   // friendship
+  //   return {};
+  // }
 
   /**
    * Action: Ends the friendship between two users.
@@ -294,8 +294,11 @@ export default class FriendingConcept {
    */
   async _getIncomingRequests(
     { user }: { user: User },
-  ): Promise<UsersDoc[]> {
-    return await this.users.find({ outgoingRequests: user }).toArray();
+  ): Promise<{ friendId: ID }[]> {
+    const friendDocs = await this.users.find({ outgoingRequests: user })
+      .toArray();
+    const friends = friendDocs.map((f) => ({ friendId: f._id }));
+    return friends;
   }
 
   /**
@@ -304,9 +307,12 @@ export default class FriendingConcept {
    */
   async _getOutgoingRequests(
     { user }: { user: User },
-  ): Promise<ID[]> {
+  ): Promise<{ friendId: ID }[]> {
     const currUser = await this.users.findOne({ _id: user });
-    return currUser!.outgoingRequests;
+    if (currUser == null) {
+      return [];
+    }
+    return currUser.outgoingRequests.map((f) => ({ friendId: f }));
   }
 
   /**
@@ -315,8 +321,22 @@ export default class FriendingConcept {
    */
   async _getFriends(
     { user }: { user: User },
-  ): Promise<ID[]> {
+  ): Promise<{ friendId: ID }[]> {
     const currUser = await this.users.findOne({ _id: user });
-    return currUser!.friends;
+    if (currUser == null) {
+      return [];
+    }
+    return currUser.friends.map((f) => ({ friendId: f }));
+  }
+
+  /**
+   * Query: Determines if user is friends with another user.
+   * @requires user exists in set of users
+   * @effects returns True if the user is friends with friend, False otherwise
+   */
+  async _isFriendsWith(
+    { user, friend }: { user: User; friend: User },
+  ): Promise<{ friendshipExists: boolean }[]> {
+    return [{ friendshipExists: (friend in this._getFriends({ user })) }];
   }
 }

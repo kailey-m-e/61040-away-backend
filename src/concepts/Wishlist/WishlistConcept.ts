@@ -104,7 +104,20 @@ export default class WishlistConcept {
    */
   async _getPlaces(
     { user }: { user: User },
-  ): Promise<PlaceDoc[]> {
-    return await this.places.find({ user: user }).toArray();
+  ): Promise<{ place: Place }[]> {
+    const places = await this.places.find({ user }).toArray();
+    return places.map((p) => ({ place: p._id }));
+  }
+
+  /**
+   * Query: Retrieves the place for a given ID.
+   * @requires exists place with the given ID
+   * @effects returns the place with the given ID
+   */
+  async _getPlaceById(
+    { _id }: { _id: ID },
+  ): Promise<{ placeData: PlaceDoc }[]> {
+    const place = await this.places.find({ _id }).toArray();
+    return place.map((p) => ({ placeData: p }));
   }
 }

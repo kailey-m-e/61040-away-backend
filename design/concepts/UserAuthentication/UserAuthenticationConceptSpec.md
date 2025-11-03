@@ -21,3 +21,9 @@
 
 &nbsp; authenticate(username: String, password: String) \
 &nbsp;&nbsp;&nbsp; **requires** username matches a user whose password matches the given password after re-hashing with the stored salt
+
+**queries**
+
+&nbsp; _getUserByUsername(username: String) : (userFromUsername: User) \
+&nbsp;&nbsp;&nbsp; **requires** user with given uesername existsafter re-hashing with the stored salt
+&nbsp;&nbsp;&nbsp; **effects** returns the user with a given username

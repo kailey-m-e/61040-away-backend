@@ -143,4 +143,31 @@ export default class UserAuthenticationConcept {
 
     return {};
   }
+
+  /**
+   * Query: Retrieves the user with a given username.
+   * @requires user with given uesername exists
+   * @effects returns the user with a given username
+   */
+  async _getUserByUsername(
+    { username }: { username: string },
+  ): Promise<{ user: User }[]> {
+    const user = await this.users.findOne({ username });
+    if (user) {
+      return [{ user: user._id }];
+    }
+    return [];
+  }
+
+  /**
+   * Query: Retrieves the username for a given user
+   * @requires user exists in set of users
+   * @effects returns the username of the given user
+   */
+  async _getUsername(
+    { user }: { user: User },
+  ): Promise<{ username: string }[]> {
+    const userFound = await this.users.findOne({ _id: user });
+    return [{ username: userFound!.username }];
+  }
 }

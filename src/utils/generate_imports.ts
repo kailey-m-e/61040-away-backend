@@ -103,9 +103,13 @@ export const [db, client] = await ${dbImportFunc}();
 `;
 
   const instantiations = concepts
-    .map((c) =>
-      `export const ${c.name} = Engine.instrumentConcept(new ${c.name}Concept(db));`
-    )
+    .map((c) => {
+      // FriendingConcept needs the client for transactions
+      if (c.name === "Friending") {
+        return `export const ${c.name} = Engine.instrumentConcept(new ${c.name}Concept(db, client));`;
+      }
+      return `export const ${c.name} = Engine.instrumentConcept(new ${c.name}Concept(db));`;
+    })
     .join("\n");
 
   return [

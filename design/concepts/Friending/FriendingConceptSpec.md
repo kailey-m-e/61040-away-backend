@@ -47,3 +47,7 @@
 
 &nbsp; _getFriends(user: User): (users set of Users) \
 &nbsp;&nbsp;&nbsp; **effects** returns all friends in given user's friends
+
+&nbsp; _isFriendsWith(user: User, friend: User): (boolean)
+&nbsp;&nbsp;&nbsp; **effects** user exists in set of users
+&nbsp;&nbsp;&nbsp; **effects** returns True if the user is friends with friend, False otherwise
