@@ -1,5 +1,12 @@
 # Away Backend
 
+## Assignment Links
+
+  - [Final Design Document](/design/FinalDesignDocument.md)
+  - [Final Reflection](/design/FinalReflection.md)
+  - [User Journey Video](https://drive.google.com/file/d/1jZOUQ7a6U8WzOf4qoxwgeMi8Xp89Pr-S/view?usp=drive_link)
+  - [User Journey Video - trace](/design/VideoTrace.md)
+
 ## Overview
 
 Backend for **Away**: a web application for users to document and share their past trips and future travel aspirations.
@@ -20,8 +27,6 @@ Backend for **Away**: a web application for users to document and share their pa
     - a test script file: [ConceptName]Concept.test.ts
     - a test script console output file: [ConceptName]TestOutput.md
 - **design**:
-  - DesignRelection.md - design reflection & interesting moments
-  - 4BDesignSummary.md - an updated design summary file (4b)
   - **/concepts**: contains a folder for each concept with:
     - a spec file: [ConceptName]ConceptSpec.md
     - a design reflection file (4a): [ConceptName]DesignReflection.md
