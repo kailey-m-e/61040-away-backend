@@ -26,5 +26,5 @@
 
 **queries**
 
-&nbsp; _getPlaces(user: User): (set of Places) \
+&nbsp; _getPlaces(user: User): (places: set of Places) \
 &nbsp;&nbsp;&nbsp; **effects** returns all places with the given user

@@ -24,6 +24,13 @@
 
 **queries**
 
-&nbsp; _getUserByUsername(username: String) : (userFromUsername: User) \
+&nbsp; _getUserByUsername(user: User) : (username: string) \
+&nbsp;&nbsp;&nbsp; **requires** user exists in set of users
+&nbsp;&nbsp;&nbsp; **effects** returns the username of the given user
+
+&nbsp; _getUsernameByUser(username: String) : (userFromUsername: User) \
 &nbsp;&nbsp;&nbsp; **requires** user with given uesername existsafter re-hashing with the stored salt
 &nbsp;&nbsp;&nbsp; **effects** returns the user with a given username
+
+&nbsp; _getUsernames() : (usernames: set of strings) \
+&nbsp;&nbsp;&nbsp; **effects** returns the usernames of all users

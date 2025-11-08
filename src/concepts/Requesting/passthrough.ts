@@ -30,6 +30,9 @@ export const inclusions: Record<string, string> = {
   "/api/UserAuthentication/hashPassword": "public registration",
   "/api/UserAuthentication/_getUserByUsername":
     "can publicly lookup users by username",
+  "/api/UserAuthentication/_getUsernameByUser":
+    "can publicly lookup username by user",
+  "/api/UserAuthentication/_getUsernames": "can publicly lookup all usernames",
   "/api/Posting/_getPostById": "can publicly lookup posts by ID",
   "/api/Wishlist/_getPlaceById": "can publicly lookup places by ID",
   // "/api/UserAuthentication/authenticate": "public login",
@@ -78,8 +81,8 @@ export const exclusions: Array<string> = [
   "/api/Friending/unrequestFriend",
   "/api/Friending/acceptFriend",
   "/api/Friending/rejectFriend",
-  "/api/Friending/validateFriendship",
   "/api/Friending/endFriendship",
+  "/api/Friending/_isFriendsWith",
   "/api/Friending/_getIncomingRequests",
   "/api/Friending/_getOutgoingRequests",
   "/api/Friending/_getFriends",

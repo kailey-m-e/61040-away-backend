@@ -30,24 +30,20 @@
 &nbsp;&nbsp;&nbsp; **requires** user exists in friend's set of outgoingRequests \
 &nbsp;&nbsp;&nbsp; **effects** removes user from friend's set of outgoingRequests
 
-&nbsp; validateFriendship(user: User, friend: User) \
-&nbsp;&nbsp;&nbsp; **requires** friend exists in user's set of friends
-
 &nbsp; endFriendship(user: User, friend: User) \
 &nbsp;&nbsp;&nbsp; **requires** friend exists in user's set of friends \
 &nbsp;&nbsp;&nbsp; **effects** removes friend from user's associated set and removes user from friend's associated set
 
 **queries**
 
-&nbsp; _getIncomingRequests(user: User): (users set of Users) \
+&nbsp; _getIncomingRequests(user: User): (users : set of Users) \
 &nbsp;&nbsp;&nbsp; **effects** returns all users with given user in their outgoingRequests
 
-&nbsp; _getOutgoingRequests(user: User): (users set of Users) \
+&nbsp; _getOutgoingRequests(user: User): (users : set of Users) \
 &nbsp;&nbsp;&nbsp; **effects** returns all friends in given user's outgoingRequests
 
-&nbsp; _getFriends(user: User): (users set of Users) \
+&nbsp; _getFriends(user: User): (users : set of Users) \
 &nbsp;&nbsp;&nbsp; **effects** returns all friends in given user's friends
 
-&nbsp; _isFriendsWith(user: User, friend: User): (boolean)
-&nbsp;&nbsp;&nbsp; **effects** user exists in set of users
+&nbsp; _isFriendsWith(user: User, friend: User): (friendshipExists: boolean)
 &nbsp;&nbsp;&nbsp; **effects** returns True if the user is friends with friend, False otherwise

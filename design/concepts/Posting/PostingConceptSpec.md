@@ -46,5 +46,5 @@
 
 **queries**
 
-&nbsp; _getPosts(user: User): (set of Posts) \
+&nbsp; _getPosts(user: User): (posts: set of Posts) \
 &nbsp;&nbsp;&nbsp; **effects** returns all posts with user as creator in order of start date, with the most recent post first

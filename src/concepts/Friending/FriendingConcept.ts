@@ -73,8 +73,7 @@ export default class FriendingConcept {
     }
 
     return await this._runInTransaction(async (session) => {
-      // check if both user and friend documents exist,
-      // and automatically create otherwise
+      // add user & friend
       await this.users.updateOne(
         { _id: user },
         { $setOnInsert: { _id: user, friends: [], outgoingRequests: [] } },
@@ -86,12 +85,9 @@ export default class FriendingConcept {
         { upsert: true, session },
       );
 
-      // fetch documents within transaction to perform complex
-      // precondition checks; reads isolated within transaction
       const userDoc = await this.users.findOne({ _id: user }, { session });
       const friendDoc = await this.users.findOne({ _id: friend }, { session });
 
-      // should  always exist after upsert
       if (!userDoc || !friendDoc) {
         throw new Error(
           "User or friend document not found after upsert operation. This indicates a critical issue.",
@@ -103,13 +99,11 @@ export default class FriendingConcept {
         throw new Error(
           `User with ID ${user} is already friends with ${friend}.`,
         );
-      }
-      if (userDoc.outgoingRequests.includes(friend)) {
+      } else if (userDoc.outgoingRequests.includes(friend)) {
         throw new Error(
           `User with ID ${user} has already sent a friend request to ${friend}.`,
         );
-      }
-      if (friendDoc.outgoingRequests.includes(user)) {
+      } else if (friendDoc.outgoingRequests.includes(user)) {
         throw new Error(
           `User with ID ${friend} has already sent a friend request to ${user}.`,
         );
@@ -224,29 +218,6 @@ export default class FriendingConcept {
     return {};
   }
 
-  // /**
-  //  * Action: Confirms that a given friendship exists.
-  //  * @requires friend exists in user's set of friends
-  //  */
-  // async validateFriendship(
-  //   { user, friend }: { user: User; friend: User },
-  // ): Promise<Empty | { error: string }> {
-  //   // check if friend is user's friend
-  //   const currFriend = await this.users.findOne({
-  //     _id: user,
-  //     friends: friend,
-  //   });
-  //   if (!currFriend) {
-  //     return {
-  //       error:
-  //         `No friendship exists between user with ID ${user} and friend with ID ${friend}.`,
-  //     };
-  //   }
-
-  //   // friendship
-  //   return {};
-  // }
-
   /**
    * Action: Ends the friendship between two users.
    * @requires friend exists in user's set of friends
@@ -331,12 +302,18 @@ export default class FriendingConcept {
 
   /**
    * Query: Determines if user is friends with another user.
-   * @requires user exists in set of users
-   * @effects returns True if the user is friends with friend, False otherwise
+   * @effects returns True if the user is friends with friend, False otherwise.
    */
   async _isFriendsWith(
     { user, friend }: { user: User; friend: User },
   ): Promise<{ friendshipExists: boolean }[]> {
-    return [{ friendshipExists: (friend in this._getFriends({ user })) }];
+    const currUser = await this.users.findOne({ _id: user });
+    if (currUser == null) {
+      return [{ friendshipExists: false }];
+    }
+    return [{
+      friendshipExists: friend in
+        currUser.friends.map((f) => ({ friendId: f })),
+    }];
   }
 }

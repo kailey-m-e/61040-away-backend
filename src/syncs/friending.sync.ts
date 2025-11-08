@@ -17,15 +17,17 @@ export const FriendingRequestFriendRequest: Sync = (
     }, { request }],
   ),
   where: async (frames) => {
-    // First query: session -> userId
     frames = await frames.query(Sessioning._getUser, { session }, {
       user: userId,
     });
 
-    // Second query: friendUsername -> friendUserId
     frames = await frames.query(UserAuthentication._getUserByUsername, {
       username: friendUsername,
     }, { user: friendUserId });
+
+    if (frames.length === 0) {
+      throw new Error("Friend not found. Cannot send friend request.");
+    }
 
     return frames;
   },
@@ -200,58 +202,6 @@ export const FriendingRejectFriendResponseError: Sync = (
   ),
 });
 
-// export const FriendingValidateFriendshipRequest: Sync = (
-//   { session, user, friendUsername, friendId, request },
-// ) => ({
-//   when: actions(
-//     [Requesting.request, {
-//       path: "/Friending/validateFriendship",
-//       session,
-//       friend: friendUsername,
-//     }, { request }],
-//   ),
-//   where: async (frames) => {
-//     frames = await frames.query(Sessioning._getUser, { session }, { user });
-
-//     frames = await frames.query(UserAuthentication._getUserByUsername, {
-//       username: friendUsername,
-//     }, { user: friendId });
-
-//     return frames;
-//   },
-//   then: actions(
-//     [Friending.validateFriendship, { user, friend: friendId }, {}],
-//   ),
-// });
-
-// export const ValidateFriendshipResponse: Sync = (
-//   { request },
-// ) => ({
-//   when: actions(
-//     [Requesting.request, { path: "/Friending/validateFriendship" }, {
-//       request,
-//     }],
-//     [Friending.validateFriendship, {}, {}],
-//   ),
-//   then: actions(
-//     [Requesting.respond, { request }],
-//   ),
-// });
-
-// export const ValidateFriendshipResponseError: Sync = (
-//   { request, error },
-// ) => ({
-//   when: actions(
-//     [Requesting.request, { path: "/Friending/validateFriendship" }, {
-//       request,
-//     }],
-//     [Friending.validateFriendship, {}, { error }],
-//   ),
-//   then: actions(
-//     [Requesting.respond, { request, error }],
-//   ),
-// });
-
 export const EndFriendshipRequest: Sync = (
   { session, user, friendUsername, friendId, request },
 ) => ({
@@ -324,7 +274,7 @@ export const GetFriendsRequest: Sync = (
     }
 
     frames = await frames.query(
-      UserAuthentication._getUsername,
+      UserAuthentication._getUsernameByUser,
       { user: friendId },
       {
         username,
@@ -362,7 +312,7 @@ export const GetOutgoingFriendsRequest: Sync = (
     }
 
     frames = await frames.query(
-      UserAuthentication._getUsername,
+      UserAuthentication._getUsernameByUser,
       { user: friendId },
       {
         username,
@@ -403,7 +353,7 @@ export const GetIncomingFriendsRequest: Sync = (
     }
 
     frames = await frames.query(
-      UserAuthentication._getUsername,
+      UserAuthentication._getUsernameByUser,
       { user: friendId },
       {
         username,
